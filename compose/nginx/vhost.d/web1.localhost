@@ -1,0 +1,15 @@
+# Redirect subfolder api1 to the docker instance api1
+location ~/api1(.*)$ {
+    proxy_set_header X-Real-IP  $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header Host $host;
+    proxy_pass http://api1:80$1;
+}
+
+# Redirect subfolder api2 to the docker instance api2
+location ~/api2(.*)$ {
+    proxy_set_header X-Real-IP  $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header Host $host;
+    proxy_pass http://api2:80$1;
+}

@@ -1,0 +1,104 @@
+version: '3'
+
+services:
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      #- ./compose/nginx/conf.d:/etc/nginx/conf.d
+      - ./compose/nginx/vhost.d:/etc/nginx/vhost.d
+      - ./compose/nginx/html:/usr/share/nginx/html:ro
+      - ./compose/nginx/certs:/etc/nginx/certs:ro
+      - ./compose/nginx/nginx.tmpl:/etc/nginx/nginx.tmpl:ro
+    networks:
+      - proxy
+      - app
+    restart: always
+
+  ## This generates extra entries in nginx-proxy if extra containers are started using a nginx.tmpl
+  # nginx-gen:
+  #   image: jwilder/docker-gen
+  #   command: -notify-sighup nginx -watch -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
+  #   container_name: nginx-gen
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./compose/nginx/conf.d:/etc/nginx/conf.d
+  #     - ./compose/nginx/vhost.d:/etc/nginx/vhost.d
+  #     - ./compose/nginx/html:/usr/share/nginx/html
+  #     - ./compose/nginx/certs:/etc/nginx/certs:ro
+  #     - /var/run/docker.sock:/tmp/docker.sock:ro
+  #     - ./compose/nginx/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
+
+  # Generates LetsEncrypt certificates if the domain is publically availale on port 80
+  # nginx-letsencrypt:
+  #   image: jrcs/letsencrypt-nginx-proxy-companion
+  #   container_name: nginx-letsencrypt
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./conf.d:/etc/nginx/conf.d
+  #     - ./vhost.d:/etc/nginx/vhost.d
+  #     - ./html:/usr/share/nginx/html
+  #     - ./certs:/etc/nginx/certs:rw
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #   environment:
+  #     NGINX_DOCKER_GEN_CONTAINER: "nginx-gen"
+  #     NGINX_PROXY_CONTAINER: "nginx"
+
+  webserver1:
+    image: php:7.2-apache
+    networks:
+      - app
+    expose:
+      - 80
+    environment:
+      VIRTUAL_HOST: web1.localhost
+      #VIRTUAL_PROTO: https
+    volumes:
+      - ./webserver1/html:/var/www/html
+
+  webserver2:
+    image: php:7.2-apache
+    networks:
+      - app
+    expose:
+      - 80
+    #environment:
+      #VIRTUAL_HOST: web2.localhost
+      #VIRTUAL_PROTO: https
+    volumes:
+      - ./webserver2/html:/var/www/html
+
+  api1:
+    image: php:7.2-apache
+    networks:
+      - app
+    expose:
+      - 80
+    environment:
+      VIRTUAL_HOST: web2.localhost
+      #VIRTUAL_PROTO: https
+    volumes:
+      - ./api1/html:/var/www/html
+
+  api2:
+    image: php:7.2-apache
+    networks:
+      - app
+    expose:
+      - 80
+    #environment:
+      #VIRTUAL_HOST: web2.localhost
+      #VIRTUAL_PROTO: https
+    volumes:
+      - ./api2/html:/var/www/html
+
+networks:
+  proxy:
+    driver: bridge
+  app:
+
